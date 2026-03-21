@@ -139,7 +139,7 @@ local function open_float()
         row = math.floor((vim.o.lines - height) / 2),
         style = "minimal",
         border = "rounded",
-        title = " Code Query ",
+        title = " Ask ",
         title_pos = "center",
     })
 
@@ -173,13 +173,13 @@ end
 --- Send a prompt to the configured provider and stream the response into a float
 function M.query(prompt, context)
     if not prompt or prompt == "" then
-        vim.notify("code-query: no prompt provided", vim.log.levels.WARN)
+        vim.notify("ask.nvim: no prompt provided", vim.log.levels.WARN)
         return
     end
 
     local provider = M.config.providers[M.config.provider]
     if not provider then
-        vim.notify("code-query: unknown provider '" .. M.config.provider .. "'", vim.log.levels.ERROR)
+        vim.notify("ask.nvim: unknown provider '" .. M.config.provider .. "'", vim.log.levels.ERROR)
         return
     end
 
@@ -191,7 +191,7 @@ function M.query(prompt, context)
             "",
             "Set auth in your setup():",
             "",
-            '  require("code-query").setup({',
+            '  require("ask").setup({',
             "      providers = { claude = { auth = \"api-key\" } }",
             "  })",
             "",
@@ -295,7 +295,7 @@ end
 --- Show session history in a floating window, select with <CR> to view response
 function M.show_history()
     if #M.history == 0 then
-        vim.notify("code-query: no history yet", vim.log.levels.INFO)
+        vim.notify("ask.nvim: no history yet", vim.log.levels.INFO)
         return
     end
 

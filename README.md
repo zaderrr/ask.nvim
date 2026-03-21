@@ -1,4 +1,4 @@
-# code-query
+# ask.nvim
 
 A Neovim plugin for brief one-line questions to a coding agent.
 No file edits, no tool use, no piping your entire root directory as context — just a question and an answer in a floating window.
@@ -25,9 +25,9 @@ lazy.nvim:
 
 ```lua
 {
-    "zaderrr/code-query",
+    "zaderrr/ask.nvim",
     config = function()
-        require("code-query").setup({})
+        require("ask").setup({})
     end,
 }
 ```
@@ -37,7 +37,7 @@ lazy.nvim:
 Defaults:
 
 ```lua
-require("code-query").setup({
+require("ask").setup({
     provider = "claude",  -- "claude" or "codex"
     width = 0.6,
     height = 0.6,
@@ -57,12 +57,12 @@ This is because `--bare` is not available to oauth users. So a system prompt is 
 
 ```lua
 -- API key
-require("code-query").setup({
+require("ask").setup({
     providers = { claude = { auth = "api-key" } }
 })
 
 -- OAuth
-require("code-query").setup({
+require("ask").setup({
     providers = { claude = { auth = "oauth" } }
 })
 ```
@@ -76,7 +76,7 @@ Both providers support a custom system prompt:
 
 ```lua
 -- Claude: works with either auth mode
-require("code-query").setup({
+require("ask").setup({
     providers = {
         claude = {
             system_prompt = "Be concise. Answer in bullet points.",
@@ -85,7 +85,7 @@ require("code-query").setup({
 })
 
 -- Codex: prepended to the user prompt
-require("code-query").setup({
+require("ask").setup({
     provider = "codex",
     providers = {
         codex = {
@@ -110,7 +110,7 @@ By default, both providers use whatever model their CLI is configured with. You 
 
 ```lua
 -- Claude: accepts aliases ("sonnet", "opus") or full names ("claude-sonnet-4-6")
-require("code-query").setup({
+require("ask").setup({
     providers = {
         claude = {
             model = "sonnet",
@@ -119,7 +119,7 @@ require("code-query").setup({
 })
 
 -- Codex: accepts model names like "o3", "o4-mini"
-require("code-query").setup({
+require("ask").setup({
     provider = "codex",
     providers = {
         codex = {
@@ -132,7 +132,7 @@ require("code-query").setup({
 ### Using codex instead
 
 ```lua
-require("code-query").setup({
+require("ask").setup({
     provider = "codex",
 })
 ```
@@ -140,19 +140,19 @@ require("code-query").setup({
 ## Usage
 
 ```
-:CQ How do I write a for loop in lua?
+:ASK How do I write a for loop in lua?
 ```
 
 Select code in visual mode, then:
 
 ```
-:'<,'>CQV What does this function do?
+:'<,'>ASKV What does this function do?
 ```
 
 Browse previous queries and responses:
 
 ```
-:CQH
+:ASKH
 ```
 
 Select an entry with `<CR>` to view the full response. Press `q` to close any window.
