@@ -1,14 +1,14 @@
--- :CQ <prompt> — ask Claude a question
+-- :ASK <prompt> — ask Claude a question
 vim.api.nvim_create_user_command("ASK", function(opts)
     require("ask").query(opts.args)
 end, { nargs = "+" })
 
--- :'<,'>CQV <prompt> — ask about the selected code
+-- :'<,'>ASKV <prompt> — ask about the selected code
 vim.api.nvim_create_user_command("ASKV", function(opts)
     require("ask").query_visual(opts.args, opts.line1, opts.line2)
 end, { nargs = "+", range = true })
 
--- :CQH — browse session history
+-- :ASKH — browse session history
 vim.api.nvim_create_user_command("ASKH", function()
     require("ask").show_history()
 end, {})

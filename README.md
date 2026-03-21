@@ -7,7 +7,7 @@ The addiction of being able to accept a 10,000 line change from an agent got too
 I realised that they want you to accept the changes, even if not prompted to make changes, and if you have always accept enabled, they will just run wild.
 
 Coding agents are great for helping you understand code or answering quick questions like "How do I read files in python".
-This plugin limits interaction to exactly that.
+This plugin limits interaction to exactly that (Also, ironically: Written with claude).
 
 ## Requirements
 
