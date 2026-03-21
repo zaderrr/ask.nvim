@@ -25,7 +25,7 @@ lazy.nvim:
 
 ```lua
 {
-    "your-username/code-query",
+    "zaderrr/code-query",
     config = function()
         require("code-query").setup({})
     end,
@@ -48,7 +48,7 @@ require("code-query").setup({
 
 If you're using an API key (via `ANTHROPIC_API_KEY`), the default `auth = "api-key"` uses `--bare` mode for the leanest requests.
 
-If you're authenticated via OAuth, set `auth = "oauth"`. This disables `--bare` and adds a default system prompt and `--tools ''` to prevent tool use.
+If you're authenticated via OAuth, set `auth = "oauth"`. This disables `--bare` and adds a default system prompt and `--tools ''` to prevent tool use.  
 This is because `--bare` is not available to oauth users. So a system prompt is prepended to the prompt. See below for configuring system prompt.
 
 ```lua
@@ -64,10 +64,11 @@ require("code-query").setup({
 ### Custom system prompt
 
 A system prompt isn't by deafult, provided to codex.
-Claude by default will have the following system prompt: `You are a helpful coding assistant. Answer only based on the code provided in the user message.`
-Setting the system prompt to `""` will allow claude to access outside of selections or use existing context for prompts when using OAuth.
-The spirit of this plugin is to limit the usage to quick questions, but you do you.
-Api key users can also supply a system prompt, but by default, one is not provided. 
+Claude by default will have the following system prompt:  
+`You are a helpful coding assistant. Answer only based on the code provided in the user message.`  
+Setting the system prompt to `""` will allow claude to access outside of selections or use existing context for prompts when using OAuth.  
+The spirit of this plugin is to limit the usage to quick questions, but you do you.  
+Api key users can also supply a system prompt, but by default, one is not provided.
 
 ```lua
 -- Works with either auth mode
