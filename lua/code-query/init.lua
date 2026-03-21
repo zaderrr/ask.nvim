@@ -23,7 +23,7 @@ M.config = {
                     table.insert(parts, "--bare")
                 end
 
-                table.insert(parts, "-p --verbose --output-format stream-json --no-session-persistence")
+                table.insert(parts, "-p --verbose --output-format stream-json --include-partial-messages --no-session-persistence")
 
                 if claude_cfg.auth == "oauth" then
                     table.insert(parts, "--tools ''")
@@ -40,14 +40,10 @@ M.config = {
                 return table.concat(parts, " ")
             end,
             parse = function(event)
-                if event.type == "assistant" and event.message then
-                    local content = event.message.content
-                    if content then
-                        for _, block in ipairs(content) do
-                            if block.type == "text" and block.text and block.text ~= "" then
-                                return block.text
-                            end
-                        end
+                if event.type == "stream_event" and event.event then
+                    local ev = event.event
+                    if ev.type == "content_block_delta" and ev.delta and ev.delta.text then
+                        return ev.delta.text
                     end
                 end
                 return nil
