@@ -1,7 +1,10 @@
 local M = {}
 
+-- Session history: { { prompt = "...", response = "...", usage = "..." }, ... }
+M.history = {}
+
 local DEFAULT_SYSTEM_PROMPT =
-    "You are a helpful coding assistant. Answer only based on the code provided in the user message."
+"You are a helpful coding assistant. Answer only based on the code provided in the user message."
 
 M.config = {
     provider = "claude",
@@ -10,7 +13,7 @@ M.config = {
     providers = {
         claude = {
             cmd = "claude",
-            auth = "api-key", -- "api-key" or "oauth"
+            auth = "oauth",      -- "api-key" or "oauth"
             system_prompt = nil, -- nil = use default for oauth, omit for api-key
             build_cmd = function(cmd, prompt)
                 local claude_cfg = M.config.providers.claude
@@ -169,6 +172,7 @@ function M.query(prompt, context)
     local got_content = false
     local partial_line = ""
     local usage_line = nil
+    local response_parts = {}
     local cmd = provider.build_cmd(provider.cmd, full_prompt)
 
     vim.fn.jobstart(cmd, {
@@ -195,6 +199,7 @@ function M.query(prompt, context)
                             vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "" })
                         end
                         append_to_buf(buf, win, text)
+                        table.insert(response_parts, text)
                     end
                     local usage = provider.parse_usage(event)
                     if usage then
@@ -220,6 +225,14 @@ function M.query(prompt, context)
                 if usage_line then
                     append_to_buf(buf, win, "\n\n---\n" .. usage_line)
                 end
+                -- Save to session history
+                if got_content then
+                    table.insert(M.history, {
+                        prompt = prompt,
+                        response = table.concat(response_parts, ""),
+                        usage = usage_line,
+                    })
+                end
             end)
         end,
     })
@@ -238,6 +251,49 @@ end
 function M.query_visual(prompt, line1, line2)
     local selection = get_lines(line1, line2)
     M.query(prompt, selection)
+end
+
+--- Show session history in a floating window, select with <CR> to view response
+function M.show_history()
+    if #M.history == 0 then
+        vim.notify("code-query: no history yet", vim.log.levels.INFO)
+        return
+    end
+
+    local buf, win = open_float()
+
+    -- Build the list of prompts
+    local display_lines = {}
+    for i, entry in ipairs(M.history) do
+        local line = entry.prompt
+        if #line > 80 then
+            line = line:sub(1, 77) .. "..."
+        end
+        table.insert(display_lines, string.format(" %d. %s", i, line))
+    end
+
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, display_lines)
+    vim.bo[buf].modifiable = false
+
+    -- <CR> to open the selected entry
+    vim.keymap.set("n", "<CR>", function()
+        local row = vim.api.nvim_win_get_cursor(win)[1]
+        local entry = M.history[row]
+        if not entry then
+            return
+        end
+        -- Close the history list
+        if vim.api.nvim_win_is_valid(win) then
+            vim.api.nvim_win_close(win, true)
+        end
+        -- Open the response in a new float
+        local rbuf, rwin = open_float()
+        local lines = vim.split(entry.response, "\n", { plain = true })
+        vim.api.nvim_buf_set_lines(rbuf, 0, -1, false, lines)
+        if entry.usage then
+            append_to_buf(rbuf, rwin, "\n\n---\n" .. entry.usage)
+        end
+    end, { buffer = buf, nowait = true })
 end
 
 return M
