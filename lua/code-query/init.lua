@@ -75,7 +75,12 @@ function M.query(prompt, context)
     local got_content = false
     local partial_line = ""
 
-    vim.fn.jobstart({ M.config.cmd, "-p", "--verbose", "--output-format", "stream-json", full_prompt }, {
+    local cmd = string.format(
+        "echo %s | %s -p --verbose --output-format stream-json --tools ''",
+        vim.fn.shellescape(full_prompt),
+        M.config.cmd
+    )
+    vim.fn.jobstart(cmd, {
         stdout_buffered = false,
         on_stdout = function(_, data)
             vim.schedule(function()
