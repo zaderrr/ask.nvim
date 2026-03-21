@@ -13,7 +13,7 @@ M.config = {
     providers = {
         claude = {
             cmd = "claude",
-            auth = "oauth",      -- "api-key" or "oauth"
+            auth = nil,          -- must be set to "api-key" or "oauth" in setup()
             system_prompt = nil, -- nil = use default for oauth, omit for api-key
             build_cmd = function(cmd, prompt)
                 local claude_cfg = M.config.providers.claude
@@ -158,6 +158,23 @@ function M.query(prompt, context)
     local provider = M.config.providers[M.config.provider]
     if not provider then
         vim.notify("code-query: unknown provider '" .. M.config.provider .. "'", vim.log.levels.ERROR)
+        return
+    end
+
+    -- Check auth is configured for claude
+    if M.config.provider == "claude" and not provider.auth then
+        local buf, win = open_float()
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
+            "Auth not configured.",
+            "",
+            "Set auth in your setup():",
+            "",
+            '  require("code-query").setup({',
+            "      providers = { claude = { auth = \"api-key\" } }",
+            "  })",
+            "",
+            "Options: \"api-key\" or \"oauth\"",
+        })
         return
     end
 

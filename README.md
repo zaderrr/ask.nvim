@@ -44,16 +44,22 @@ require("code-query").setup({
 })
 ```
 
+If using Claude, you must set `auth`. See [Claude auth](#claude-auth) below.
+
 ### Claude auth
 
-If you're using an API key (via `ANTHROPIC_API_KEY`), the default `auth = "api-key"` uses `--bare` mode for the leanest requests.
+You must set `auth` in your setup. The plugin will not run without it.
 
-If you're authenticated via OAuth, set `auth = "oauth"`. This disables `--bare` and adds a default system prompt and `--tools ''` to prevent tool use.  
+If you're using an API key (via `ANTHROPIC_API_KEY`), set `auth = "api-key"`. This uses `--bare` mode for the leanest requests.
+
+If you're authenticated via OAuth, set `auth = "oauth"`. This disables `--bare` and adds a default system prompt and `--tools ''` to prevent tool use.
 This is because `--bare` is not available to oauth users. So a system prompt is prepended to the prompt. See below for configuring system prompt.
 
 ```lua
--- API key (default, nothing extra needed)
-require("code-query").setup({})
+-- API key
+require("code-query").setup({
+    providers = { claude = { auth = "api-key" } }
+})
 
 -- OAuth
 require("code-query").setup({
