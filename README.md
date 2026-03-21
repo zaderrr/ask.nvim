@@ -69,15 +69,13 @@ require("code-query").setup({
 
 ### Custom system prompt
 
-A system prompt isn't by deafult, provided to codex.
-Claude by default will have the following system prompt:  
-`You are a helpful coding assistant. Answer only based on the code provided in the user message.`  
-Setting the system prompt to `""` will allow claude to access outside of selections or use existing context for prompts when using OAuth.  
-The spirit of this plugin is to limit the usage to quick questions, but you do you.  
-Api key users can also supply a system prompt, but by default, one is not provided.
+By default, no system prompt is provided to codex, and when authenticated with oauth Claude uses:  
+`You are a helpful coding assistant. Answer only based on the code provided in the user message.`
+
+Both providers support a custom system prompt:
 
 ```lua
--- Works with either auth mode
+-- Claude: works with either auth mode
 require("code-query").setup({
     providers = {
         claude = {
@@ -85,11 +83,51 @@ require("code-query").setup({
         }
     }
 })
+
+-- Codex: prepended to the user prompt
+require("code-query").setup({
+    provider = "codex",
+    providers = {
+        codex = {
+            system_prompt = "Be concise. Answer in bullet points.",
+        }
+    }
+})
 ```
 
-With `api-key` auth: no system prompt is sent by default (bare mode). Setting one adds `--system-prompt` to the command.
+**Claude with `api-key` auth:** no system prompt is sent by default (bare mode). Setting one adds `--system-prompt` to the command.
 
-With `oauth` auth: a default system prompt is used. Setting one overrides it.
+**Claude with `oauth` auth:** a default system prompt is used. Setting one overrides it.
+Setting the system prompt to `""` will allow Claude to access outside of selections or use existing context for prompts when using OAuth.
+
+**Codex:** no system prompt by default. When set, it is prepended to the user prompt (Codex CLI has no dedicated system prompt flag).
+
+The spirit of this plugin is to limit the usage to quick questions, but you do you.
+
+### Model selection
+
+By default, both providers use whatever model their CLI is configured with. You can override this per-provider:
+
+```lua
+-- Claude: accepts aliases ("sonnet", "opus") or full names ("claude-sonnet-4-6")
+require("code-query").setup({
+    providers = {
+        claude = {
+            model = "sonnet",
+        }
+    }
+})
+
+-- Codex: accepts model names like "o3", "o4-mini"
+require("code-query").setup({
+    provider = "codex",
+    providers = {
+        codex = {
+            model = "o3",
+        }
+    }
+})
+```
 
 ### Using codex instead
 
@@ -111,5 +149,11 @@ Select code in visual mode, then:
 :'<,'>CQV What does this function do?
 ```
 
-Press `q` to close the response window.
+Browse previous queries and responses:
+
+```
+:CQH
+```
+
+Select an entry with `<CR>` to view the full response. Press `q` to close any window.
 

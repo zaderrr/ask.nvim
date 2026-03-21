@@ -14,6 +14,7 @@ M.config = {
         claude = {
             cmd = "claude",
             auth = nil,          -- must be set to "api-key" or "oauth" in setup()
+            model = nil,         -- e.g. "sonnet", "opus", "claude-sonnet-4-6"
             system_prompt = nil, -- nil = use default for oauth, omit for api-key
             build_cmd = function(cmd, prompt)
                 local claude_cfg = M.config.providers.claude
@@ -27,6 +28,10 @@ M.config = {
 
                 if claude_cfg.auth == "oauth" then
                     table.insert(parts, "--tools ''")
+                end
+
+                if claude_cfg.model then
+                    table.insert(parts, "--model " .. claude_cfg.model)
                 end
 
                 -- system prompt: explicit config wins, otherwise default for oauth only
@@ -50,8 +55,16 @@ M.config = {
             end,
             parse_usage = function(event)
                 if event.type == "result" and event.usage then
+                    local model = "unknown"
+                    if event.modelUsage then
+                        for k, _ in pairs(event.modelUsage) do
+                            model = k
+                            break
+                        end
+                    end
                     return string.format(
-                        "tokens: %d in / %d out | cost: $%.4f",
+                        "model: %s | tokens: %d in / %d out | cost: $%.4f",
+                        model,
                         event.usage.input_tokens or 0,
                         event.usage.output_tokens or 0,
                         event.total_cost_usd or 0
@@ -62,12 +75,23 @@ M.config = {
         },
         codex = {
             cmd = "codex",
+            model = nil,         -- e.g. "o3", "o4-mini"
+            system_prompt = nil, -- prepended to prompt when set
             build_cmd = function(cmd, prompt)
-                return string.format(
+                local codex_cfg = M.config.providers.codex
+                local sp = codex_cfg.system_prompt
+                if sp and sp ~= "" then
+                    prompt = sp .. "\n\n" .. prompt
+                end
+                local base = string.format(
                     "echo %s | %s exec --json -s read-only",
                     vim.fn.shellescape(prompt),
                     cmd
                 )
+                if codex_cfg.model then
+                    base = base .. " -m " .. codex_cfg.model
+                end
+                return base
             end,
             parse = function(event)
                 if event.type == "item.completed" and event.item then
@@ -80,8 +104,10 @@ M.config = {
             end,
             parse_usage = function(event)
                 if event.type == "turn.completed" and event.usage then
+                    local model = M.config.providers.codex.model or "default"
                     return string.format(
-                        "tokens: %d in (%d cached) / %d out",
+                        "model: %s | tokens: %d in (%d cached) / %d out",
+                        model,
                         event.usage.input_tokens or 0,
                         event.usage.cached_input_tokens or 0,
                         event.usage.output_tokens or 0
