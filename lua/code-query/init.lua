@@ -1,5 +1,8 @@
 local M = {}
 
+local DEFAULT_SYSTEM_PROMPT =
+    "You are a helpful coding assistant. Answer only based on the code provided in the user message."
+
 M.config = {
     provider = "claude",
     width = 0.6,
@@ -7,13 +10,31 @@ M.config = {
     providers = {
         claude = {
             cmd = "claude",
+            auth = "api-key", -- "api-key" or "oauth"
+            system_prompt = nil, -- nil = use default for oauth, omit for api-key
             build_cmd = function(cmd, prompt)
-                return string.format(
-                    "echo %s | %s -p --verbose --output-format stream-json --tools '' --no-session-persistence --system-prompt %s",
-                    vim.fn.shellescape(prompt),
-                    cmd,
-                    vim.fn.shellescape("You are a helpful coding assistant. Answer only based on the code provided in the user message.")
-                )
+                local claude_cfg = M.config.providers.claude
+                local parts = { "echo", vim.fn.shellescape(prompt), "|", cmd }
+
+                if claude_cfg.auth == "api-key" then
+                    table.insert(parts, "--bare")
+                end
+
+                table.insert(parts, "-p --verbose --output-format stream-json --no-session-persistence")
+
+                if claude_cfg.auth == "oauth" then
+                    table.insert(parts, "--tools ''")
+                end
+
+                -- system prompt: explicit config wins, otherwise default for oauth only
+                local sp = claude_cfg.system_prompt
+                if sp then
+                    table.insert(parts, "--system-prompt " .. vim.fn.shellescape(sp))
+                elseif claude_cfg.auth == "oauth" then
+                    table.insert(parts, "--system-prompt " .. vim.fn.shellescape(DEFAULT_SYSTEM_PROMPT))
+                end
+
+                return table.concat(parts, " ")
             end,
             parse = function(event)
                 if event.type == "assistant" and event.message then
@@ -25,6 +46,17 @@ M.config = {
                             end
                         end
                     end
+                end
+                return nil
+            end,
+            parse_usage = function(event)
+                if event.type == "result" and event.usage then
+                    return string.format(
+                        "tokens: %d in / %d out | cost: $%.4f",
+                        event.usage.input_tokens or 0,
+                        event.usage.output_tokens or 0,
+                        event.total_cost_usd or 0
+                    )
                 end
                 return nil
             end,
@@ -44,6 +76,17 @@ M.config = {
                     if text and text ~= "" then
                         return text
                     end
+                end
+                return nil
+            end,
+            parse_usage = function(event)
+                if event.type == "turn.completed" and event.usage then
+                    return string.format(
+                        "tokens: %d in (%d cached) / %d out",
+                        event.usage.input_tokens or 0,
+                        event.usage.cached_input_tokens or 0,
+                        event.usage.output_tokens or 0
+                    )
                 end
                 return nil
             end,
@@ -125,6 +168,7 @@ function M.query(prompt, context)
 
     local got_content = false
     local partial_line = ""
+    local usage_line = nil
     local cmd = provider.build_cmd(provider.cmd, full_prompt)
 
     vim.fn.jobstart(cmd, {
@@ -152,6 +196,10 @@ function M.query(prompt, context)
                         end
                         append_to_buf(buf, win, text)
                     end
+                    local usage = provider.parse_usage(event)
+                    if usage then
+                        usage_line = usage
+                    end
                     ::continue::
                 end
             end)
@@ -168,6 +216,9 @@ function M.query(prompt, context)
                         { "Error: " .. M.config.provider .. " exited with code " .. code })
                 elseif not got_content then
                     vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "No response received." })
+                end
+                if usage_line then
+                    append_to_buf(buf, win, "\n\n---\n" .. usage_line)
                 end
             end)
         end,
