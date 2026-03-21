@@ -1,9 +1,54 @@
 local M = {}
 
 M.config = {
-    cmd = "claude",
+    provider = "claude",
     width = 0.6,
     height = 0.6,
+    providers = {
+        claude = {
+            cmd = "claude",
+            build_cmd = function(cmd, prompt)
+                return string.format(
+                    "echo %s | %s -p --verbose --output-format stream-json --tools '' --no-session-persistence --system-prompt %s",
+                    vim.fn.shellescape(prompt),
+                    cmd,
+                    vim.fn.shellescape("You are a helpful coding assistant. Answer only based on the code provided in the user message.")
+                )
+            end,
+            parse = function(event)
+                if event.type == "assistant" and event.message then
+                    local content = event.message.content
+                    if content then
+                        for _, block in ipairs(content) do
+                            if block.type == "text" and block.text and block.text ~= "" then
+                                return block.text
+                            end
+                        end
+                    end
+                end
+                return nil
+            end,
+        },
+        codex = {
+            cmd = "codex",
+            build_cmd = function(cmd, prompt)
+                return string.format(
+                    "echo %s | %s exec --json -s read-only",
+                    vim.fn.shellescape(prompt),
+                    cmd
+                )
+            end,
+            parse = function(event)
+                if event.type == "item.completed" and event.item then
+                    local text = event.item.text
+                    if text and text ~= "" then
+                        return text
+                    end
+                end
+                return nil
+            end,
+        },
+    },
 }
 
 function M.setup(opts)
@@ -57,10 +102,16 @@ local function append_to_buf(buf, win, text)
     end
 end
 
---- Send a prompt to Claude and stream the response into a float
+--- Send a prompt to the configured provider and stream the response into a float
 function M.query(prompt, context)
     if not prompt or prompt == "" then
         vim.notify("code-query: no prompt provided", vim.log.levels.WARN)
+        return
+    end
+
+    local provider = M.config.providers[M.config.provider]
+    if not provider then
+        vim.notify("code-query: unknown provider '" .. M.config.provider .. "'", vim.log.levels.ERROR)
         return
     end
 
@@ -74,12 +125,8 @@ function M.query(prompt, context)
 
     local got_content = false
     local partial_line = ""
+    local cmd = provider.build_cmd(provider.cmd, full_prompt)
 
-    local cmd = string.format(
-        "echo %s | %s -p --verbose --output-format stream-json --tools ''",
-        vim.fn.shellescape(full_prompt),
-        M.config.cmd
-    )
     vim.fn.jobstart(cmd, {
         stdout_buffered = false,
         on_stdout = function(_, data)
@@ -97,20 +144,13 @@ function M.query(prompt, context)
                         goto continue
                     end
                     partial_line = ""
-                    -- assistant messages contain the streamed text
-                    if event.type == "assistant" and event.message then
-                        local content = event.message.content
-                        if content then
-                            for _, block in ipairs(content) do
-                                if block.type == "text" and block.text and block.text ~= "" then
-                                    if not got_content then
-                                        got_content = true
-                                        vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "" })
-                                    end
-                                    append_to_buf(buf, win, block.text)
-                                end
-                            end
+                    local text = provider.parse(event)
+                    if text then
+                        if not got_content then
+                            got_content = true
+                            vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "" })
                         end
+                        append_to_buf(buf, win, text)
                     end
                     ::continue::
                 end
@@ -124,7 +164,8 @@ function M.query(prompt, context)
                     return
                 end
                 if code ~= 0 then
-                    vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "Error: claude exited with code " .. code })
+                    vim.api.nvim_buf_set_lines(buf, 0, -1, false,
+                        { "Error: " .. M.config.provider .. " exited with code " .. code })
                 elseif not got_content then
                     vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "No response received." })
                 end
