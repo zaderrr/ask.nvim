@@ -145,15 +145,14 @@ require("ask").setup({
 ```
 :ASK How do I write a for loop in lua?
 ```
-
+![ask](https://github.com/user-attachments/assets/d6dbda12-964a-4e43-8417-e46339a726b1)
 
 Select code in visual mode, then:
 
 ```
 :'<,'>ASKV What does this function do?
 ```
-![ask](https://github.com/user-attachments/assets/d6dbda12-964a-4e43-8417-e46339a726b1)
-
+![visual](https://github.com/user-attachments/assets/9637851c-09ed-4fcb-8ebc-d6c33da45807)
 
 Browse previous queries and responses:
 
