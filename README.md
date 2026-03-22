@@ -9,6 +9,9 @@ I realised that they want you to accept the changes, even if not prompted to mak
 Coding agents are great for helping you understand code or answering quick questions like "How do I read files in python".
 This plugin limits interaction to exactly that (Also, ironically: Written with claude).
 
+I don't think this is the perfect solution by any means (that would be willpower)  
+But as an experiment I think limiting my token spend on explanations/knowledge can't be a bad idea. 
+
 ## Requirements
 
 - [Claude CLI](https://github.com/anthropics/claude-code) and/or [Codex CLI](https://github.com/openai/codex)
@@ -142,18 +145,21 @@ require("ask").setup({
 ```
 :ASK How do I write a for loop in lua?
 ```
+![2026-03-21 23-57-55](https://github.com/user-attachments/assets/a5b1c93c-6bea-429c-993c-7ea53f74ac68)
 
 Select code in visual mode, then:
 
 ```
 :'<,'>ASKV What does this function do?
 ```
+![2026-03-21 23-58-25](https://github.com/user-attachments/assets/3258602a-de78-410c-a2d0-902e0f3a00a1)
 
 Browse previous queries and responses:
 
 ```
 :ASKH
 ```
+![2026-03-21 23-58-45](https://github.com/user-attachments/assets/4d0fdabe-01bb-4c44-9eef-69fc7a9c74a2)
 
 Select an entry with `<CR>` to view the full response. Press `q` to close any window.
 
