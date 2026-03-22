@@ -24,7 +24,8 @@ M.config = {
                     table.insert(parts, "--bare")
                 end
 
-                table.insert(parts, "-p --verbose --output-format stream-json --include-partial-messages --no-session-persistence")
+                table.insert(parts,
+                    "-p --verbose --output-format stream-json --include-partial-messages --no-session-persistence")
 
                 if claude_cfg.auth == "oauth" then
                     table.insert(parts, "--tools ''")
@@ -292,15 +293,32 @@ function M.query_visual(prompt, line1, line2)
     M.query(prompt, selection)
 end
 
+local function open_specific_history(entry)
+    local rbuf, rwin = open_float()
+    local lines = vim.split(entry.response, "\n", { plain = true })
+    vim.api.nvim_buf_set_lines(rbuf, 0, -1, false, lines)
+    if entry.usage then
+        append_to_buf(rbuf, rwin, "\n\n---\n" .. entry.usage)
+    end
+end
+
 --- Show session history in a floating window, select with <CR> to view response
-function M.show_history()
+function M.show_history(prompt_num)
     if #M.history == 0 then
         vim.notify("ask.nvim: no history yet", vim.log.levels.INFO)
         return
     end
+    if prompt_num then
+        if prompt_num > (#M.history) then
+            vim.notify("ask.nvim: no history with that number exists")
+            return
+        end
+        local prompt = M.history[prompt_num]
+        open_specific_history(prompt)
+        return
+    end
 
     local buf, win = open_float()
-
     -- Build the list of prompts
     local display_lines = {}
     for i, entry in ipairs(M.history) do
@@ -326,12 +344,7 @@ function M.show_history()
             vim.api.nvim_win_close(win, true)
         end
         -- Open the response in a new float
-        local rbuf, rwin = open_float()
-        local lines = vim.split(entry.response, "\n", { plain = true })
-        vim.api.nvim_buf_set_lines(rbuf, 0, -1, false, lines)
-        if entry.usage then
-            append_to_buf(rbuf, rwin, "\n\n---\n" .. entry.usage)
-        end
+        open_specific_history(entry)
     end, { buffer = buf, nowait = true })
 end
 

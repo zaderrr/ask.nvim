@@ -9,6 +9,6 @@ vim.api.nvim_create_user_command("ASKV", function(opts)
 end, { nargs = "+", range = true })
 
 -- :ASKH — browse session history
-vim.api.nvim_create_user_command("ASKH", function()
-    require("ask").show_history()
-end, {})
+vim.api.nvim_create_user_command("ASKH", function(opts)
+    require("ask").show_history(tonumber(opts.fargs[1]))
+end, { nargs = "?" })

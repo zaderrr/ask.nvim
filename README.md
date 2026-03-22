@@ -160,7 +160,12 @@ Browse previous queries and responses:
 :ASKH
 ```
 ![ezgif-34b636e37da8b9a6](https://github.com/user-attachments/assets/208a4c7c-9d52-44a6-8c3d-efd9f63a1f10)
+Select an entry with `<CR>` to view the full response.  
+  
+Go to previous prompt without navigating history:  
 
-
-Select an entry with `<CR>` to view the full response. Press `q` to close any window.
+```
+:ASKH <number>
+```
+Press `q` to close any window.
 
